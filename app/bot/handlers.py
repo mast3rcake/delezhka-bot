@@ -1,11 +1,13 @@
 from decimal import Decimal, InvalidOperation
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from app.storage.repository import TripRepository
+from app.bot.keyboards import main_menu_keyboard
 from app.domain.calculator import calculate_result
+from app.storage.repository import TripRepository
+
 
 router = Router()
 
@@ -57,20 +59,15 @@ def parse_add_command(text: str):
 async def start_handler(message: Message):
     await message.answer(
         "Привет! Я <b>Делёжка</b> 🧾\n\n"
-        "Я помогу разделить расходы.\n\n"
-        "Команды:\n"
-        "/newtrip — новая делёжка\n"
-        "/participants — добавить участников\n"
-        "/add — добавить расход\n"
-        "/expenses — список расходов\n"
-        "/result — итог\n"
-        "/clear — очистить"
+        "Выбери действие ниже:",
+        reply_markup=main_menu_keyboard(),
     )
 
 
 @router.message(Command("newtrip"))
 async def newtrip_handler(message: Message):
     repository = TripRepository()
+
     repository.create_trip(message.chat.id)
 
     await message.answer(
@@ -85,6 +82,7 @@ async def participants_handler(message: Message):
     repository = TripRepository()
 
     raw_text = message.text.replace("/participants", "").strip()
+
     participants = parse_participants(raw_text)
 
     if not participants:
@@ -149,6 +147,8 @@ async def add_handler(message: Message):
         f"{payer} — {amount} ₽\n"
         f"{description}"
     )
+
+
 @router.message(Command("expenses"))
 async def expenses_handler(message: Message):
     repository = TripRepository()
@@ -163,7 +163,10 @@ async def expenses_handler(message: Message):
         )
         return
 
-    total = sum(expense["amount"] for expense in expenses)
+    total = sum(
+        expense["amount"]
+        for expense in expenses
+    )
 
     lines = ["Расходы:\n"]
 
@@ -177,7 +180,11 @@ async def expenses_handler(message: Message):
     lines.append("")
     lines.append(f"Всего: {total} ₽")
 
-    await message.answer("\n".join(lines))
+    await message.answer(
+        "\n".join(lines)
+    )
+
+
 @router.message(Command("result"))
 async def result_handler(message: Message):
     repository = TripRepository()
@@ -245,6 +252,8 @@ async def result_handler(message: Message):
     await message.answer(
         "\n".join(lines)
     )
+
+
 @router.message(Command("clear"))
 async def clear_handler(message: Message):
     repository = TripRepository()
@@ -256,3 +265,39 @@ async def clear_handler(message: Message):
         "Создать новую:\n"
         "/newtrip"
     )
+
+
+@router.message(F.text == "🆕 Новая делёжка")
+async def newtrip_button_handler(message: Message):
+    await newtrip_handler(message)
+
+
+@router.message(F.text == "👥 Участники")
+async def participants_button_handler(message: Message):
+    await message.answer(
+        "Отправь участников:\n\n"
+        "/participants Анна, Борис, Вика"
+    )
+
+
+@router.message(F.text == "💸 Добавить расход")
+async def add_button_handler(message: Message):
+    await message.answer(
+        "Отправь расход:\n\n"
+        "/add Анна 1200 продукты"
+    )
+
+
+@router.message(F.text == "📋 Расходы")
+async def expenses_button_handler(message: Message):
+    await expenses_handler(message)
+
+
+@router.message(F.text == "🧮 Итог")
+async def result_button_handler(message: Message):
+    await result_handler(message)
+
+
+@router.message(F.text == "🗑 Очистить")
+async def clear_button_handler(message: Message):
+    await clear_handler(message)

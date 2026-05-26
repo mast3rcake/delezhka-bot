@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  delezhka-bot:
+    build: .
+    container_name: delezhka-bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./delezhka.db:/app/delezhka.db

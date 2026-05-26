@@ -1,0 +1,6 @@
+services:
+  - type: worker
+    name: delezhka-bot
+    runtime: docker
+    plan: free
+    autoDeploy: true
