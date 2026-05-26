@@ -1,5 +1,7 @@
 import asyncio
+import os
 
+from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -9,8 +11,32 @@ from app.bot.handlers import router
 from app.storage.database import init_db
 
 
+async def healthcheck(request):
+    return web.Response(text="OK")
+
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", healthcheck)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+
+    port = int(os.getenv("PORT", "8000"))
+
+    site = web.TCPSite(
+        runner,
+        host="0.0.0.0",
+        port=port,
+    )
+
+    await site.start()
+
+
 async def main():
     init_db()
+
+    await start_web_server()
 
     bot = Bot(
         token=settings.bot_token,
@@ -20,7 +46,6 @@ async def main():
     )
 
     dp = Dispatcher()
-
     dp.include_router(router)
 
     print("Bot started...")
