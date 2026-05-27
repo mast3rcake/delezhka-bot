@@ -19,3 +19,48 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
     )
+
+
+def participants_keyboard(participants: list[str]) -> ReplyKeyboardMarkup:
+    keyboard = []
+
+    for participant in participants:
+        keyboard.append([
+            KeyboardButton(text=participant)
+        ])
+
+    keyboard.append([
+        KeyboardButton(text="❌ Отмена")
+    ])
+
+    return ReplyKeyboardMarkup(
+        keyboard=keyboard,
+        resize_keyboard=True,
+    )
+
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+
+def participants_inline_keyboard(
+    participants: list[str],
+) -> InlineKeyboardMarkup:
+    keyboard = []
+
+    for participant in participants:
+        keyboard.append([
+            InlineKeyboardButton(
+                text=participant,
+                callback_data=f"payer:{participant}",
+            )
+        ])
+
+    keyboard.append([
+        InlineKeyboardButton(
+            text="❌ Отмена",
+            callback_data="payer:cancel",
+        )
+    ])
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=keyboard,
+    )

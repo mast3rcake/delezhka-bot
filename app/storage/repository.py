@@ -8,14 +8,6 @@ class TripRepository:
         with get_connection() as db:
             db.execute(
                 """
-                INSERT OR REPLACE INTO trips (chat_id)
-                VALUES (?)
-                """,
-                (chat_id,),
-            )
-
-            db.execute(
-                """
                 DELETE FROM participants
                 WHERE chat_id = ?
                 """,
@@ -31,37 +23,9 @@ class TripRepository:
             )
 
             db.commit()
-
-
-
 
     def clear_trip(self, chat_id: int) -> None:
-        with get_connection() as db:
-            db.execute(
-                """
-                DELETE FROM expenses
-                WHERE chat_id = ?
-                """,
-                (chat_id,),
-            )
-
-            db.execute(
-                """
-                DELETE FROM participants
-                WHERE chat_id = ?
-                """,
-                (chat_id,),
-            )
-
-            db.execute(
-                """
-                DELETE FROM trips
-                WHERE chat_id = ?
-                """,
-                (chat_id,),
-            )
-
-            db.commit()
+        self.create_trip(chat_id)
 
     def add_participants(
         self,
@@ -69,6 +33,14 @@ class TripRepository:
         participants: list[str],
     ) -> None:
         with get_connection() as db:
+            db.execute(
+                """
+                DELETE FROM participants
+                WHERE chat_id = ?
+                """,
+                (chat_id,),
+            )
+
             for participant in participants:
                 db.execute(
                     """
@@ -91,18 +63,16 @@ class TripRepository:
         chat_id: int,
     ) -> list[str]:
         with get_connection() as db:
-            cursor = db.execute(
+            rows = db.execute(
                 """
                 SELECT name
                 FROM participants
                 WHERE chat_id = ?
                 """,
                 (chat_id,),
-            )
+            ).fetchall()
 
-            rows = cursor.fetchall()
-
-            return [row[0] for row in rows]
+        return [row[0] for row in rows]
 
     def add_expense(
         self,
@@ -137,23 +107,46 @@ class TripRepository:
         chat_id: int,
     ) -> list[dict]:
         with get_connection() as db:
-            cursor = db.execute(
+            rows = db.execute(
                 """
-                SELECT payer, amount, description
+                SELECT
+                    id,
+                    payer,
+                    amount,
+                    description
                 FROM expenses
                 WHERE chat_id = ?
                 ORDER BY id
                 """,
                 (chat_id,),
+            ).fetchall()
+
+        return [
+            {
+                "id": row[0],
+                "payer": row[1],
+                "amount": row[2],
+                "description": row[3],
+            }
+            for row in rows
+        ]
+
+    def delete_expense(
+        self,
+        chat_id: int,
+        expense_id: int,
+    ) -> None:
+        with get_connection() as db:
+            db.execute(
+                """
+                DELETE FROM expenses
+                WHERE chat_id = ?
+                AND id = ?
+                """,
+                (
+                    chat_id,
+                    expense_id,
+                ),
             )
 
-            rows = cursor.fetchall()
-
-            return [
-                {
-                    "payer": row[0],
-                    "amount": row[1],
-                    "description": row[2],
-                }
-                for row in rows
-            ]
+            db.commit()

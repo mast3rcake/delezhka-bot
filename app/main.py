@@ -5,6 +5,7 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from app.config import settings
 from app.bot.handlers import router
@@ -45,7 +46,7 @@ async def main():
         ),
     )
 
-    dp = Dispatcher()
+    dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(router)
 
     print("Bot started...")
